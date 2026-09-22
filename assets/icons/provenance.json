@@ -1,0 +1,56 @@
+{
+  "copyright": "© CCP Games",
+  "source": "https://content.eveonline.com/data/Phoebe_1.0_Icons.zip",
+  "icons": [
+    {
+      "name": "mail",
+      "source": "Icons/items/7_64_14.png",
+      "sha256": "d4841825cbcd5280e61ce72e423dec2022b8036f3dfb0dfdc8b82240059ac189"
+    },
+    {
+      "name": "local",
+      "source": "Icons/items/9_64_2.png",
+      "sha256": "c0b706fd6e9b23f3b4163b7635dac4ec9b4cd4173bbd121cae544dae4dcfed74"
+    },
+    {
+      "name": "assets",
+      "source": "Icons/items/7_64_13.png",
+      "sha256": "a8b36bdf22a7c277336c6d9958bf95c13f13a83d994959f5aebe9b2ebe697665"
+    },
+    {
+      "name": "contracts",
+      "source": "Icons/items/7_64_3.png",
+      "sha256": "114f88fb489fe1e584a65131e05aba68ba8118e96806900fde4f9b7e1a5571a8"
+    },
+    {
+      "name": "navigation",
+      "source": "Icons/items/9_64_4.png",
+      "sha256": "7473570a04c6e82fc9e30a208173ddc6d68180f4f12cdb99d9642452d0727ad8"
+    },
+    {
+      "name": "wallet",
+      "source": "Icons/items/7_64_2.png",
+      "sha256": "92f8c7e40ec390a2c3c951278e309e49749df4d9e95a221cea05d7997a44f115"
+    },
+    {
+      "name": "industry",
+      "source": "Icons/items/7_64_12.png",
+      "sha256": "b4d0ea3ffd73e8702e622195dbb06f014af289253772ccf305041092a3cc2522"
+    },
+    {
+      "name": "security",
+      "source": "Icons/items/9_64_8.png",
+      "sha256": "d9b9abbe104c6bdf002cdd1b6e1dcd9ff7ba13a9d5319ea0114474f78c129aa7"
+    },
+    {
+      "name": "undock",
+      "source": "Icons/items/9_64_6.png",
+      "sha256": "e38cae1f952b5912f9be15cc127775da0fcc16a3f154898a1f522861d9912578"
+    },
+    {
+      "name": "station",
+      "source": "Icons/items/24_64_10.png",
+      "sha256": "262aaa699483767d48b9e6ba14b992bf924514336e06e10f1b3dce167abdb691"
+    }
+  ]
+}

@@ -1,0 +1,781 @@
+{
+  "createdAt": "2026-09-22T04:27:45.289Z",
+  "method": "One veteran heuristic commander versus three fixed 1.5x-advantage baselines. Rotating seats and three styles. Free-for-all, 600 commander-turn / 60000-action horizon. Baselines use visible board state only. No parameter tuning on these seeds.",
+  "games": 96,
+  "seedBase": 820000,
+  "wins": 87,
+  "losses": 0,
+  "unfinished": 9,
+  "elapsedMs": 13545,
+  "limitations": "A narrow local baseline comparison, not evidence of expert-human strength or a ranking of difficulty levels. Militia team play is covered by invariant simulations, not this comparison.",
+  "results": [
+    {
+      "seed": 820000,
+      "seat": 0,
+      "style": "aggressive",
+      "winner": 0,
+      "turns": 97,
+      "actions": 1967
+    },
+    {
+      "seed": 827919,
+      "seat": 1,
+      "style": "aggressive",
+      "winner": 1,
+      "turns": 94,
+      "actions": 2153
+    },
+    {
+      "seed": 835838,
+      "seat": 2,
+      "style": "aggressive",
+      "winner": 2,
+      "turns": 91,
+      "actions": 2008
+    },
+    {
+      "seed": 843757,
+      "seat": 3,
+      "style": "aggressive",
+      "winner": 3,
+      "turns": 156,
+      "actions": 4253
+    },
+    {
+      "seed": 851676,
+      "seat": 0,
+      "style": "balanced",
+      "winner": 0,
+      "turns": 121,
+      "actions": 3556
+    },
+    {
+      "seed": 859595,
+      "seat": 1,
+      "style": "balanced",
+      "winner": 1,
+      "turns": 74,
+      "actions": 1435
+    },
+    {
+      "seed": 867514,
+      "seat": 2,
+      "style": "balanced",
+      "winner": null,
+      "turns": 602,
+      "actions": 13494
+    },
+    {
+      "seed": 875433,
+      "seat": 3,
+      "style": "balanced",
+      "winner": null,
+      "turns": 601,
+      "actions": 32627
+    },
+    {
+      "seed": 883352,
+      "seat": 0,
+      "style": "defensive",
+      "winner": 0,
+      "turns": 201,
+      "actions": 8554
+    },
+    {
+      "seed": 891271,
+      "seat": 1,
+      "style": "defensive",
+      "winner": 1,
+      "turns": 102,
+      "actions": 2822
+    },
+    {
+      "seed": 899190,
+      "seat": 2,
+      "style": "defensive",
+      "winner": 2,
+      "turns": 115,
+      "actions": 3214
+    },
+    {
+      "seed": 907109,
+      "seat": 3,
+      "style": "defensive",
+      "winner": null,
+      "turns": 602,
+      "actions": 48148
+    },
+    {
+      "seed": 915028,
+      "seat": 0,
+      "style": "aggressive",
+      "winner": 0,
+      "turns": 133,
+      "actions": 3448
+    },
+    {
+      "seed": 922947,
+      "seat": 1,
+      "style": "aggressive",
+      "winner": 1,
+      "turns": 138,
+      "actions": 4537
+    },
+    {
+      "seed": 930866,
+      "seat": 2,
+      "style": "aggressive",
+      "winner": 2,
+      "turns": 67,
+      "actions": 1296
+    },
+    {
+      "seed": 938785,
+      "seat": 3,
+      "style": "aggressive",
+      "winner": 3,
+      "turns": 72,
+      "actions": 1479
+    },
+    {
+      "seed": 946704,
+      "seat": 0,
+      "style": "balanced",
+      "winner": 0,
+      "turns": 181,
+      "actions": 6283
+    },
+    {
+      "seed": 954623,
+      "seat": 1,
+      "style": "balanced",
+      "winner": 1,
+      "turns": 186,
+      "actions": 5525
+    },
+    {
+      "seed": 962542,
+      "seat": 2,
+      "style": "balanced",
+      "winner": 2,
+      "turns": 135,
+      "actions": 3097
+    },
+    {
+      "seed": 970461,
+      "seat": 3,
+      "style": "balanced",
+      "winner": 3,
+      "turns": 120,
+      "actions": 2845
+    },
+    {
+      "seed": 978380,
+      "seat": 0,
+      "style": "defensive",
+      "winner": 0,
+      "turns": 145,
+      "actions": 5545
+    },
+    {
+      "seed": 986299,
+      "seat": 1,
+      "style": "defensive",
+      "winner": 1,
+      "turns": 138,
+      "actions": 4856
+    },
+    {
+      "seed": 994218,
+      "seat": 2,
+      "style": "defensive",
+      "winner": 2,
+      "turns": 107,
+      "actions": 3484
+    },
+    {
+      "seed": 1002137,
+      "seat": 3,
+      "style": "defensive",
+      "winner": 3,
+      "turns": 144,
+      "actions": 5140
+    },
+    {
+      "seed": 1010056,
+      "seat": 0,
+      "style": "aggressive",
+      "winner": 0,
+      "turns": 133,
+      "actions": 3717
+    },
+    {
+      "seed": 1017975,
+      "seat": 1,
+      "style": "aggressive",
+      "winner": null,
+      "turns": 602,
+      "actions": 31771
+    },
+    {
+      "seed": 1025894,
+      "seat": 2,
+      "style": "aggressive",
+      "winner": 2,
+      "turns": 175,
+      "actions": 5685
+    },
+    {
+      "seed": 1033813,
+      "seat": 3,
+      "style": "aggressive",
+      "winner": 3,
+      "turns": 84,
+      "actions": 1811
+    },
+    {
+      "seed": 1041732,
+      "seat": 0,
+      "style": "balanced",
+      "winner": 0,
+      "turns": 145,
+      "actions": 3861
+    },
+    {
+      "seed": 1049651,
+      "seat": 1,
+      "style": "balanced",
+      "winner": 1,
+      "turns": 206,
+      "actions": 6588
+    },
+    {
+      "seed": 1057570,
+      "seat": 2,
+      "style": "balanced",
+      "winner": 2,
+      "turns": 119,
+      "actions": 2862
+    },
+    {
+      "seed": 1065489,
+      "seat": 3,
+      "style": "balanced",
+      "winner": 3,
+      "turns": 192,
+      "actions": 5166
+    },
+    {
+      "seed": 1073408,
+      "seat": 0,
+      "style": "defensive",
+      "winner": 0,
+      "turns": 169,
+      "actions": 5896
+    },
+    {
+      "seed": 1081327,
+      "seat": 1,
+      "style": "defensive",
+      "winner": 1,
+      "turns": 250,
+      "actions": 10852
+    },
+    {
+      "seed": 1089246,
+      "seat": 2,
+      "style": "defensive",
+      "winner": 2,
+      "turns": 127,
+      "actions": 4653
+    },
+    {
+      "seed": 1097165,
+      "seat": 3,
+      "style": "defensive",
+      "winner": 3,
+      "turns": 124,
+      "actions": 3014
+    },
+    {
+      "seed": 1105084,
+      "seat": 0,
+      "style": "aggressive",
+      "winner": 0,
+      "turns": 61,
+      "actions": 962
+    },
+    {
+      "seed": 1113003,
+      "seat": 1,
+      "style": "aggressive",
+      "winner": 1,
+      "turns": 174,
+      "actions": 5484
+    },
+    {
+      "seed": 1120922,
+      "seat": 2,
+      "style": "aggressive",
+      "winner": 2,
+      "turns": 239,
+      "actions": 9328
+    },
+    {
+      "seed": 1128841,
+      "seat": 3,
+      "style": "aggressive",
+      "winner": 3,
+      "turns": 180,
+      "actions": 5654
+    },
+    {
+      "seed": 1136760,
+      "seat": 0,
+      "style": "balanced",
+      "winner": 0,
+      "turns": 77,
+      "actions": 1622
+    },
+    {
+      "seed": 1144679,
+      "seat": 1,
+      "style": "balanced",
+      "winner": 1,
+      "turns": 206,
+      "actions": 7891
+    },
+    {
+      "seed": 1152598,
+      "seat": 2,
+      "style": "balanced",
+      "winner": 2,
+      "turns": 71,
+      "actions": 1367
+    },
+    {
+      "seed": 1160517,
+      "seat": 3,
+      "style": "balanced",
+      "winner": 3,
+      "turns": 64,
+      "actions": 1243
+    },
+    {
+      "seed": 1168436,
+      "seat": 0,
+      "style": "defensive",
+      "winner": 0,
+      "turns": 165,
+      "actions": 7081
+    },
+    {
+      "seed": 1176355,
+      "seat": 1,
+      "style": "defensive",
+      "winner": 1,
+      "turns": 170,
+      "actions": 5306
+    },
+    {
+      "seed": 1184274,
+      "seat": 2,
+      "style": "defensive",
+      "winner": 2,
+      "turns": 207,
+      "actions": 8070
+    },
+    {
+      "seed": 1192193,
+      "seat": 3,
+      "style": "defensive",
+      "winner": 3,
+      "turns": 252,
+      "actions": 10052
+    },
+    {
+      "seed": 1200112,
+      "seat": 0,
+      "style": "aggressive",
+      "winner": 0,
+      "turns": 121,
+      "actions": 3412
+    },
+    {
+      "seed": 1208031,
+      "seat": 1,
+      "style": "aggressive",
+      "winner": 1,
+      "turns": 82,
+      "actions": 1717
+    },
+    {
+      "seed": 1215950,
+      "seat": 2,
+      "style": "aggressive",
+      "winner": 2,
+      "turns": 79,
+      "actions": 1840
+    },
+    {
+      "seed": 1223869,
+      "seat": 3,
+      "style": "aggressive",
+      "winner": 3,
+      "turns": 112,
+      "actions": 2580
+    },
+    {
+      "seed": 1231788,
+      "seat": 0,
+      "style": "balanced",
+      "winner": 0,
+      "turns": 73,
+      "actions": 1711
+    },
+    {
+      "seed": 1239707,
+      "seat": 1,
+      "style": "balanced",
+      "winner": 1,
+      "turns": 398,
+      "actions": 16597
+    },
+    {
+      "seed": 1247626,
+      "seat": 2,
+      "style": "balanced",
+      "winner": null,
+      "turns": 601,
+      "actions": 11698
+    },
+    {
+      "seed": 1255545,
+      "seat": 3,
+      "style": "balanced",
+      "winner": 3,
+      "turns": 148,
+      "actions": 4288
+    },
+    {
+      "seed": 1263464,
+      "seat": 0,
+      "style": "defensive",
+      "winner": null,
+      "turns": 601,
+      "actions": 40824
+    },
+    {
+      "seed": 1271383,
+      "seat": 1,
+      "style": "defensive",
+      "winner": 1,
+      "turns": 122,
+      "actions": 4152
+    },
+    {
+      "seed": 1279302,
+      "seat": 2,
+      "style": "defensive",
+      "winner": 2,
+      "turns": 387,
+      "actions": 19868
+    },
+    {
+      "seed": 1287221,
+      "seat": 3,
+      "style": "defensive",
+      "winner": 3,
+      "turns": 76,
+      "actions": 2311
+    },
+    {
+      "seed": 1295140,
+      "seat": 0,
+      "style": "aggressive",
+      "winner": 0,
+      "turns": 97,
+      "actions": 2714
+    },
+    {
+      "seed": 1303059,
+      "seat": 1,
+      "style": "aggressive",
+      "winner": 1,
+      "turns": 98,
+      "actions": 2353
+    },
+    {
+      "seed": 1310978,
+      "seat": 2,
+      "style": "aggressive",
+      "winner": 2,
+      "turns": 107,
+      "actions": 2213
+    },
+    {
+      "seed": 1318897,
+      "seat": 3,
+      "style": "aggressive",
+      "winner": 3,
+      "turns": 252,
+      "actions": 11088
+    },
+    {
+      "seed": 1326816,
+      "seat": 0,
+      "style": "balanced",
+      "winner": 0,
+      "turns": 177,
+      "actions": 5713
+    },
+    {
+      "seed": 1334735,
+      "seat": 1,
+      "style": "balanced",
+      "winner": 1,
+      "turns": 234,
+      "actions": 8685
+    },
+    {
+      "seed": 1342654,
+      "seat": 2,
+      "style": "balanced",
+      "winner": 2,
+      "turns": 83,
+      "actions": 1993
+    },
+    {
+      "seed": 1350573,
+      "seat": 3,
+      "style": "balanced",
+      "winner": 3,
+      "turns": 508,
+      "actions": 26598
+    },
+    {
+      "seed": 1358492,
+      "seat": 0,
+      "style": "defensive",
+      "winner": 0,
+      "turns": 449,
+      "actions": 25075
+    },
+    {
+      "seed": 1366411,
+      "seat": 1,
+      "style": "defensive",
+      "winner": 1,
+      "turns": 74,
+      "actions": 1589
+    },
+    {
+      "seed": 1374330,
+      "seat": 2,
+      "style": "defensive",
+      "winner": 2,
+      "turns": 183,
+      "actions": 6820
+    },
+    {
+      "seed": 1382249,
+      "seat": 3,
+      "style": "defensive",
+      "winner": 3,
+      "turns": 204,
+      "actions": 7428
+    },
+    {
+      "seed": 1390168,
+      "seat": 0,
+      "style": "aggressive",
+      "winner": 0,
+      "turns": 293,
+      "actions": 9254
+    },
+    {
+      "seed": 1398087,
+      "seat": 1,
+      "style": "aggressive",
+      "winner": 1,
+      "turns": 94,
+      "actions": 2208
+    },
+    {
+      "seed": 1406006,
+      "seat": 2,
+      "style": "aggressive",
+      "winner": 2,
+      "turns": 111,
+      "actions": 2674
+    },
+    {
+      "seed": 1413925,
+      "seat": 3,
+      "style": "aggressive",
+      "winner": 3,
+      "turns": 80,
+      "actions": 1906
+    },
+    {
+      "seed": 1421844,
+      "seat": 0,
+      "style": "balanced",
+      "winner": 0,
+      "turns": 37,
+      "actions": 729
+    },
+    {
+      "seed": 1429763,
+      "seat": 1,
+      "style": "balanced",
+      "winner": 1,
+      "turns": 278,
+      "actions": 10173
+    },
+    {
+      "seed": 1437682,
+      "seat": 2,
+      "style": "balanced",
+      "winner": 2,
+      "turns": 327,
+      "actions": 12944
+    },
+    {
+      "seed": 1445601,
+      "seat": 3,
+      "style": "balanced",
+      "winner": null,
+      "turns": 601,
+      "actions": 7716
+    },
+    {
+      "seed": 1453520,
+      "seat": 0,
+      "style": "defensive",
+      "winner": 0,
+      "turns": 125,
+      "actions": 4212
+    },
+    {
+      "seed": 1461439,
+      "seat": 1,
+      "style": "defensive",
+      "winner": 1,
+      "turns": 138,
+      "actions": 4701
+    },
+    {
+      "seed": 1469358,
+      "seat": 2,
+      "style": "defensive",
+      "winner": 2,
+      "turns": 159,
+      "actions": 5741
+    },
+    {
+      "seed": 1477277,
+      "seat": 3,
+      "style": "defensive",
+      "winner": null,
+      "turns": 601,
+      "actions": 51628
+    },
+    {
+      "seed": 1485196,
+      "seat": 0,
+      "style": "aggressive",
+      "winner": 0,
+      "turns": 113,
+      "actions": 3538
+    },
+    {
+      "seed": 1493115,
+      "seat": 1,
+      "style": "aggressive",
+      "winner": null,
+      "turns": 602,
+      "actions": 15836
+    },
+    {
+      "seed": 1501034,
+      "seat": 2,
+      "style": "aggressive",
+      "winner": 2,
+      "turns": 71,
+      "actions": 1749
+    },
+    {
+      "seed": 1508953,
+      "seat": 3,
+      "style": "aggressive",
+      "winner": 3,
+      "turns": 188,
+      "actions": 5219
+    },
+    {
+      "seed": 1516872,
+      "seat": 0,
+      "style": "balanced",
+      "winner": 0,
+      "turns": 81,
+      "actions": 1896
+    },
+    {
+      "seed": 1524791,
+      "seat": 1,
+      "style": "balanced",
+      "winner": 1,
+      "turns": 126,
+      "actions": 3751
+    },
+    {
+      "seed": 1532710,
+      "seat": 2,
+      "style": "balanced",
+      "winner": 2,
+      "turns": 139,
+      "actions": 3963
+    },
+    {
+      "seed": 1540629,
+      "seat": 3,
+      "style": "balanced",
+      "winner": 3,
+      "turns": 192,
+      "actions": 5766
+    },
+    {
+      "seed": 1548548,
+      "seat": 0,
+      "style": "defensive",
+      "winner": 0,
+      "turns": 81,
+      "actions": 2094
+    },
+    {
+      "seed": 1556467,
+      "seat": 1,
+      "style": "defensive",
+      "winner": 1,
+      "turns": 170,
+      "actions": 6620
+    },
+    {
+      "seed": 1564386,
+      "seat": 2,
+      "style": "defensive",
+      "winner": 2,
+      "turns": 183,
+      "actions": 6405
+    },
+    {
+      "seed": 1572305,
+      "seat": 3,
+      "style": "defensive",
+      "winner": 3,
+      "turns": 96,
+      "actions": 2693
+    }
+  ]
+}

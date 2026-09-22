@@ -1,0 +1,14 @@
+{
+  "name": "eveonline-risk",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "New Eden: Warfront — single-player RISK-inspired conquest across the Caldari–Gallente warzone.",
+  "scripts": {
+    "serve": "python3 -m http.server 8090",
+    "test": "node --test tests/*.test.js",
+    "test:e2e": "playwright test",
+    "benchmark": "node scripts/benchmark.js"
+  },
+  "devDependencies": { "@playwright/test": "^1.63.0" }
+}

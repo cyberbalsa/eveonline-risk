@@ -1,0 +1,91 @@
+{
+  "sources": {
+    "eve": {
+      "owner": "CCP Games",
+      "recorder": "Mad_Guns22",
+      "source": "https://www.reddit.com/r/Eve/comments/2r3pwl/eve_online_audio_warning_and_training_completed/",
+      "archive": "https://www.mediafire.com/file/axi2yh02onyrig7/EVE_Online_Audio_Warnings_and_Chimes_v2.7z/file",
+      "terms": "https://support.eveonline.com/hc/en-us/articles/8563917741084-EVE-Online-Content-Creation-Terms-of-Use",
+      "processing": "CCP in-game audio recorded by the source author. Trimmed and faded; no synthesized imitation or voice cloning. Not public domain."
+    },
+    "casino": {
+      "owner": "Kenney",
+      "pack": "Casino Audio 1.1",
+      "source": "https://kenney.nl/assets/casino-audio",
+      "archive": "https://kenney.nl/media/pages/assets/casino-audio/2472606a04-1721639069/kenney_casino-audio.zip",
+      "terms": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "license": "CC0-1.0",
+      "processing": "Dice foley trimmed and EQ-filtered with soft edges. Not EVE audio."
+    },
+    "scifi": {
+      "owner": "Kenney",
+      "pack": "Sci-fi Sounds 1.0",
+      "source": "https://kenney.nl/assets/sci-fi-sounds",
+      "archive": "https://kenney.nl/media/pages/assets/sci-fi-sounds/6b296f9ecf-1677589334/kenney_sci-fi-sounds.zip",
+      "terms": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "license": "CC0-1.0",
+      "processing": "Thruster sample trimmed, EQ-filtered and faded to a short one-shot. Not EVE audio."
+    }
+  },
+  "encoding": "Mono 44.1kHz 96kbps MP3. Five unchanged EVE cues plus two supplemental CC0 action sounds.",
+  "files": [
+    {
+      "file": "assets/sounds/interface.mp3",
+      "source": "eve",
+      "original": "EVE Online - Cargo Warning.mp3",
+      "duration": 0.88,
+      "originalSHA256": "fa8bdd98eac97ec55f492271abac411e594243af10749125feab6654c60e180c",
+      "sha256": "20eb140bba35cb86223c277c7a98e77a0ab2f7144e256a24c0dad0339c7336e4"
+    },
+    {
+      "file": "assets/sounds/notification.mp3",
+      "source": "eve",
+      "original": "EVE Online - Notification Ping.mp3",
+      "duration": 3.96,
+      "originalSHA256": "4c1bab9219a3cba0e28424c5551953fec3ebaec8341a95f222823ed798bcdc66",
+      "sha256": "c9c0c38b43e22f220229d62a877ff8880db16e68e2a3a3b782b8f0d29b49ea46"
+    },
+    {
+      "file": "assets/sounds/complete.mp3",
+      "source": "eve",
+      "original": "EVE Online - Skill Completed Chime [wo Aura].mp3",
+      "duration": 4,
+      "originalSHA256": "14cc2ce3cb283e0210e40b321ef9f1d2ef6e02f4ca43cb86c6c3b770584e6fa3",
+      "sha256": "31765703ae42cdd5191af458ccdb90a18e36982c038d3c931f51f401cfe2817f"
+    },
+    {
+      "file": "assets/sounds/capacitor.mp3",
+      "source": "eve",
+      "original": "EVE Online - Capacitor Warning.mp3",
+      "duration": 1.17,
+      "originalSHA256": "419962a6bb8c3f238ca15462a5a38e1392d7e4eba56fc22ade74bf6a31b2122f",
+      "sha256": "68fec9b9c21337126a5565e3fe0f75610972ac5f951c02095af42ce27ea4ddb5"
+    },
+    {
+      "file": "assets/sounds/structure.mp3",
+      "source": "eve",
+      "original": "EVE Online - Structure Warning.mp3",
+      "duration": 1.84,
+      "originalSHA256": "be409f57d4a1eabf35157e7df808ca7a8db269707cccdd6da0accb32981f2787",
+      "sha256": "ccf88f32817985edd00b936c378f8d8be8464566f2802925342e587afeb8696e"
+    },
+    {
+      "file": "assets/sounds/dice-roll.mp3",
+      "source": "casino",
+      "original": "Audio/dice-throw-3.ogg",
+      "duration": 0.36,
+      "filter": "atrim=start=0.025:duration=0.36,asetpts=PTS-STARTPTS,highpass=f=140,lowpass=f=6500,volume=0.7,afade=t=in:d=0.004,afade=t=out:st=0.28:d=0.08",
+      "originalSHA256": "09c13d35a9a30bfce31a5e9bca94adc5be189ddecd0b4500237d54c7fd05227c",
+      "sha256": "9331420466a203a61e33b6127252c99347c8c85e07991c88ad3b73be876d5d66"
+    },
+    {
+      "file": "assets/sounds/ship-thrust.mp3",
+      "source": "scifi",
+      "original": "Audio/thrusterFire_000.ogg",
+      "duration": 1.05,
+      "filter": "atrim=duration=1.05,asetpts=PTS-STARTPTS,highpass=f=90,lowpass=f=1800,afade=t=in:d=0.09,afade=t=out:st=0.25:d=0.8",
+      "originalSHA256": "0fdc474d93f209debf1fc4ea77765a669dcb7676db31b4d8a0a509685bccf374",
+      "sha256": "b49801749867360ac1f9236f07a95e180ed398b5d13fba64176039f0e9887add"
+    }
+  ]
+}
