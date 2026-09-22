@@ -14,6 +14,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: python3 scripts/build-map.py && git diff --exit-code -- map-data.js
       - run: npm test
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e

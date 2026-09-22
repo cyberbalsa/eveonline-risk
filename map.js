@@ -1,5 +1,6 @@
 import { SYSTEMS, GROUPS, EDGES, NEIGHBORS } from './map-data.js';
 import { COLORS, enemies, connectedOwned } from './engine.js';
+import { NEUTRAL, FACTION_COLORS, fwEnabled, controllerName, operationalState, canLaunch } from './warfare.js';
 const svg = document.querySelector('#warzone');
 const viewport = document.querySelector('#map-viewport');
 const NS = 'http://www.w3.org/2000/svg';
@@ -8,6 +9,7 @@ let box = { x: 0, y: 0, w: 1710, h: 1290 };
 let choose, dragging = false, moved = false, pinchDistance = null;
 const pointers = new Map();
 const nodes = [], lines = [];
+let lastState = null, activeSelected = null, activeTarget = null, hovered = null;
 function el(tag, attrs = {}, text = '') {
   const e = document.createElementNS(NS, tag);
   for (const [key, value] of Object.entries(attrs)) e.setAttribute(key, value);
@@ -26,7 +28,7 @@ export function initMap(onChoose) {
   choose = onChoose;
   const regions = document.querySelector('#map-regions'), links = document.querySelector('#map-links'), systems = document.querySelector('#map-systems');
   GROUPS.forEach((g,i) => {
-    const pts = g.systems.flatMap(id => { const s = SYSTEMS[id]; return [[s.x-48,s.y-30],[s.x+48,s.y-30],[s.x+48,s.y+47],[s.x-48,s.y+47]]; });
+    const pts = g.systems.flatMap(id => { const s = SYSTEMS[id]; return [[s.x-20,s.y-20],[s.x+20,s.y-20],[s.x+20,s.y+20],[s.x-20,s.y+20]]; });
     const hull = convex(pts);
     regions.append(el('path', { d: `M${hull.map(p=>p.join(',')).join('L')}Z`, fill: GROUP_COLORS[i], 'fill-opacity': .035, stroke: GROUP_COLORS[i], 'stroke-opacity': .13, 'stroke-width': 1, 'stroke-linejoin': 'round' }));
     const x = g.systems.reduce((v,id) => v+SYSTEMS[id].x,0)/g.systems.length;
@@ -39,10 +41,12 @@ export function initMap(onChoose) {
   });
   SYSTEMS.forEach((s,i) => {
     const group = el('g',{transform:`translate(${s.x} ${s.y})`,class:'system',tabindex:0,role:'button','data-system':i});
-    group.append(el('rect',{x:-53,y:-22,width:106,height:65,rx:8,class:'hit'}),el('circle',{r:25,class:'halo'}),el('circle',{r:15,class:'ring'}),el('text',{class:'fleet',y:0}),el('text',{class:'name',y:34},s.name));
+    group.append(el('title'),el('circle',{r:18,class:'hit'}),el('circle',{r:22,class:'halo'}),el('circle',{r:18,class:'front-ring'}),el('circle',{r:12,class:'ring'}),el('text',{class:'fleet',y:0}),el('text',{class:'name',y:29},s.name));
     group.addEventListener('click', e => { if (!moved) { e.stopPropagation(); choose(i); } });
     group.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(i); } });
     group.addEventListener('focus', () => { const p=SYSTEMS[i]; if(p.x<box.x || p.x>box.x+box.w || p.y<box.y || p.y>box.y+box.h) focusSystem(i); });
+    group.addEventListener('pointerenter', () => { hovered=i; layoutLabels(); });
+    group.addEventListener('pointerleave', () => { hovered=null; layoutLabels(); });
     systems.append(group); nodes.push(group);
   });
   document.querySelector('#map-fit').addEventListener('click', fitMap);
@@ -51,6 +55,8 @@ export function initMap(onChoose) {
   document.querySelector('#map-labels').addEventListener('click', e => {
     const hidden = svg.classList.toggle('hide-labels'); e.currentTarget.setAttribute('aria-pressed',String(!hidden));
   });
+  document.querySelector('#map-color').addEventListener('change',()=>{if(lastState)renderMap(lastState,activeSelected,activeTarget,document.querySelector('#system-search').value);});
+  new ResizeObserver(layoutLabels).observe(viewport);
   viewport.addEventListener('wheel', e => {
     e.preventDefault(); const point = svgPoint(e.clientX,e.clientY);
     zoom(Math.exp(Math.max(-200,Math.min(200,e.deltaY))*.0015),point.x,point.y);
@@ -83,6 +89,7 @@ function applyBox() {
   box.x=Math.max(-box.w*.6,Math.min(1710-box.w*.4,box.x));
   box.y=Math.max(-box.h*.6,Math.min(1290-box.h*.4,box.y));
   svg.setAttribute('viewBox',`${box.x} ${box.y} ${box.w} ${box.h}`);
+  layoutLabels();
 }
 function zoom(factor,x=box.x+box.w/2,y=box.y+box.h/2) {
   const width=Math.max(280,Math.min(2400,box.w*factor));factor=width/box.w;
@@ -96,18 +103,63 @@ export function focusGroup(index) {
   box={x:minX,y:minY,w,h};applyBox();
 }
 export function renderMap(state,selected,target,filter = '') {
+  lastState=state;activeSelected=selected;activeTarget=target;
+  const byMilitia=document.querySelector('#map-color').value==='militia'&&fwEnabled(state);
+  const legend=document.querySelector('.map-legend');
+  legend.querySelectorAll('.color-key').forEach(item=>item.remove());
+  const keys=byMilitia?[['Caldari',FACTION_COLORS.caldari],['Gallente',FACTION_COLORS.gallente]]:state.players.map((p,i)=>[p.name,COLORS[i]]);
+  if(fwEnabled(state))keys.push(['Neutral','#b1bac5']);
+  for(const [name,color] of keys){
+    const item=document.createElement('span'),dot=document.createElement('i');
+    item.className='color-key';dot.className='legend-dot';dot.style.setProperty('--dot',color);
+    item.append(dot,document.createTextNode(name));legend.insertBefore(item,document.querySelector('#frontline-key'));
+  }
+  document.querySelector('#frontline-key').hidden=!fwEnabled(state);
   nodes.forEach((node,i) => {
     const t=state.territories[i];
     let eligible=false;
     if(selected!==null && state.current===0 && state.territories[selected].owner===0) {
-      if(state.phase==='attack')eligible=NEIGHBORS[selected].includes(i)&&enemies(state,0,t.owner);
+      if(state.phase==='attack')eligible=canLaunch(state,selected)&&canLaunch(state,i)&&NEIGHBORS[selected].includes(i)&&enemies(state,0,t.owner);
       if(state.phase==='fortify')eligible=selected!==i&&t.owner===0&&connectedOwned(state,selected,i);
     }
-    node.style.setProperty('--owner',COLORS[t.owner]);
-    node.setAttribute('class',`system${selected===i?' selected':''}${target===i?' target':''}${eligible?' eligible':''}${filter && !SYSTEMS[i].name.toLowerCase().includes(filter.toLowerCase())?' dimmed':''}`);
+    node.style.setProperty('--owner',t.owner===NEUTRAL?'#b1bac5':byMilitia?FACTION_COLORS[t.sovereignty]:COLORS[t.owner]);
+    node.style.setProperty('--sovereignty',FACTION_COLORS[t.sovereignty]||COLORS[t.owner]);
+    node.style.setProperty('--fleet-color',COLORS[t.owner]||'#b1bac5');
+    const frontline=fwEnabled(state)&&operationalState(state,i)==='Frontline';
+    node.setAttribute('class',`system${selected===i?' selected':''}${target===i?' target':''}${eligible?' eligible':''}${frontline?' frontline':''}${t.pending?' pending':''}${t.owner===NEUTRAL?' neutral':''}${t.owner===0?' mine':''}${filter && !SYSTEMS[i].name.toLowerCase().includes(filter.toLowerCase())?' dimmed':''}`);
     node.querySelector('.fleet').textContent=t.troops;
-    node.setAttribute('aria-label',`${SYSTEMS[i].name}, ${state.players[t.owner].name}, ${t.troops} fleets`);
+    const description=`${SYSTEMS[i].name}, ${controllerName(state,t.owner)}, ${t.troops} fleets${fwEnabled(state)?`, ${t.sovereignty}, ${operationalState(state,i)}, ${t.pending?'lost until downtime':`${t.contested}% contested`}`:''}`;
+    node.setAttribute('aria-label',description);
+    node.querySelector('title').textContent=description;
     node.setAttribute('aria-pressed',String(selected===i));
   });
-  lines.forEach((line,i) => line.classList.toggle('highlight',selected!==null && EDGES[i].includes(selected)));
+  lines.forEach((line,i) => {
+    line.classList.toggle('highlight',selected!==null && EDGES[i].includes(selected));
+    const [a,b]=EDGES[i];
+    line.classList.toggle('frontline-gate',fwEnabled(state)&&state.territories[a].sovereignty!==state.territories[b].sovereignty);
+  });
+  layoutLabels();
+}
+function layoutLabels() {
+  if(!nodes.length)return;
+  const scale=svg.getScreenCTM()?.a||.5;
+  const fontSize=Math.max(10,Math.min(24,12/scale)), height=fontSize*1.25;
+  const occupied=[];
+  const intersects=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+  const visible=i=>SYSTEMS[i].x>=box.x-40&&SYSTEMS[i].x<=box.x+box.w+40&&SYSTEMS[i].y>=box.y-40&&SYSTEMS[i].y<=box.y+box.h+40;
+  const priority=i=>(i===hovered?100:i===activeTarget?90:i===activeSelected?80:activeSelected!==null&&NEIGHBORS[activeSelected].includes(i)?20:0);
+  const order=SYSTEMS.map((_,i)=>i).sort((a,b)=>priority(b)-priority(a));
+  for(const i of order){
+    const label=nodes[i].querySelector('.name'),s=SYSTEMS[i],width=s.name.length*fontSize*.54+8;
+    label.style.fontSize=`${fontSize}px`;
+    if(!visible(i)){label.style.visibility='hidden';continue;}
+    const candidates=[{x:18,y:-height/2},{x:-width-18,y:-height/2},{x:-width/2,y:20},{x:-width/2,y:-height-20},{x:16,y:18},{x:-width-16,y:-height-18}];
+    const clear=candidates.find(c=>{
+      const rect={x:s.x+c.x,y:s.y+c.y,w:width,h:height};
+      return !occupied.some(b=>intersects(rect,b))&&!SYSTEMS.some((other,j)=>j!==i&&intersects(rect,{x:other.x-14,y:other.y-14,w:28,h:28}));
+    });
+    const chosen=clear||(priority(i)>=80?candidates[0]:null);
+    label.style.visibility=chosen?'visible':'hidden';
+    if(chosen){label.setAttribute('x',chosen.x+width/2);label.setAttribute('y',chosen.y+height*.76);occupied.push({x:s.x+chosen.x,y:s.y+chosen.y,w:width,h:height});}
+  }
 }

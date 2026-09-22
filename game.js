@@ -1,5 +1,6 @@
 import { SYSTEMS, GROUPS, NEIGHBORS } from './map-data.js';
-import { COLORS, CARD_TYPES, newGame, assertState, owned, enemies, income, borders, reinforce, attack, occupy, beginAttack, beginFortify, fortify, endTurn, connectedOwned, conquestChance, cardType, findSet, validSet, tradeCards, tradeValue } from './engine.js';
+import { COLORS, CARD_TYPES, newGame, assertState, migrateSave, owned, enemies, income, borders, reinforce, attack, occupy, beginAttack, beginFortify, fortify, endTurn, connectedOwned, conquestChance, cardType, findSet, validSet, tradeCards, tradeValue, plex } from './engine.js';
+import { NEUTRAL, FACTION_COLORS, fwEnabled, controllerName, operationalState, needsHub, canLaunch } from './warfare.js';
 import { stepBot } from './bots.js';
 import { initMap, renderMap, focusSystem, focusGroup, fitMap, GROUP_COLORS } from './map.js';
 import { audioSettings, setAudio, sound } from './audio.js';
@@ -11,7 +12,7 @@ let state, started=false, selected=null, target=null, chosenCards=[], paused=fal
 let saveProblem='';
 try {
   const saved=localStorage.getItem(KEY);
-  if(saved){const parsed=JSON.parse(saved);assertState(parsed);state=parsed;started=true;}
+  if(saved){const parsed=migrateSave(JSON.parse(saved));assertState(parsed);state=parsed;started=true;}
 } catch { saveProblem='Saved campaign could not be loaded. Export is available after a new deployment.'; }
 if(!state)state=newGame({seed:20260922});
 function toast(message){$('toast').textContent=message;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,4200);}
@@ -29,7 +30,7 @@ function transact(action, effect='interface'){
 function selectSystem(index){
   stopBlitz();
   const t=state.territories[index];
-  if(humanTurn() && state.phase==='attack' && selected!==null && state.territories[selected].owner===0 && enemies(state,0,t.owner) && NEIGHBORS[selected].includes(index))target=index;
+  if(humanTurn() && state.phase==='attack' && selected!==null && state.territories[selected].owner===0 && (enemies(state,0,t.owner) || fwEnabled(state) && t.contested > 0) && NEIGHBORS[selected].includes(index))target=index;
   else if(humanTurn() && state.phase==='fortify' && selected!==null && state.territories[selected].owner===0 && t.owner===0 && index!==selected && connectedOwned(state,selected,index))target=index;
   else{selected=index;target=null;}
   render();
@@ -59,6 +60,8 @@ function renderRoster(){
   const counts=state.players.map((_,i)=>owned(state,i).length);
   $('control-percent').textContent=`${Math.round(counts[0]/SYSTEMS.length*100)}%`;
   $('control-bar').innerHTML=counts.map((n,i)=>`<span style="width:${n/SYSTEMS.length*100}%;background:${COLORS[i]}"></span>`).join('');
+  const neutral=owned(state,NEUTRAL).length;
+  if(neutral)$('control-bar').innerHTML+=`<span title="${neutral} neutral garrisons" style="width:${neutral/SYSTEMS.length*100}%;background:#8d98a5"></span>`;
   $('roster').innerHTML=state.players.map((p,i)=>`<button class="commander ${state.current===i?'active':''} ${!counts[i]?'eliminated':''}" style="--commander:${COLORS[i]}" data-player="${i}" aria-label="${escape(p.name)}, ${counts[i]} systems"><img src="assets/${p.ship}.png" alt=""><span class="pilot"><strong>${escape(p.name)}</strong><small>${i===0?'YOU':state.mode==='teams'&&p.team===0?'ALLY':'BOT'} · ${p.faction==='caldari'?'CALMIL':'GALMIL'}${i>0?` · ${p.style==='aggressive'?'AGG':p.style==='defensive'?'DEF':'BAL'}`:''}</small></span><span class="count">${counts[i]}<small>SYSTEMS</small></span></button>`).join('');
   $('constellations').innerHTML=GROUPS.map((g,i)=>{
     const n=g.systems.filter(id=>state.territories[id].owner===0).length;
@@ -76,17 +79,26 @@ function renderOrders(){
     html=`<h3 class="orders-title">${paused?'Holding position.':'Orders in motion.'}</h3><p class="orders-copy"><strong style="color:${COLORS[state.current]}">${escape(p.name)}</strong> is ${state.phase==='reinforce'?'deploying reinforcements':state.phase==='fortify'?'securing the frontier':'engaging the enemy'}. ${!owned(state,0).length?'Your fleet has been eliminated. You are spectating.':'Your next turn will begin automatically.'}</p>${battleHTML()}<button class="next-phase" data-action="pause">${paused?'Resume bot turns':'Pause bot turns'}</button>`;
   }else if(state.phase==='reinforce'){
     const inc=income(state);
-    html=`<h3 class="orders-title">Strengthen the front.</h3><p class="orders-copy">${state.resumeAttack?'Deploy your elimination bonus, then resume the attack.':'Select one of your systems to deploy fleets.'}</p><div class="reserve-card"><strong>${state.reserve}</strong><span>FLEETS TO DEPLOY<br><span class="muted">${inc.base} base + ${inc.bonus} constellation income</span></span></div>${mine?`<p class="orders-copy">Deploy to <strong>${SYSTEMS[selected].name}</strong></p><div class="action-row">${fleetInput(1,Math.max(1,state.reserve))}<button class="primary" data-action="deploy" ${state.reserve===0?'disabled':''}>Deploy fleets</button></div>`:'<div class="cards-empty">Select a blue system on the map.</div>'}<button class="next-phase" data-action="attack-phase" ${state.reserve||state.players[0].cards.length>=5?'disabled':''}>${state.resumeAttack?'Resume attack':'Begin attack phase'} →</button>`;
+    html=`<h3 class="orders-title">Strengthen the front.</h3><p class="orders-copy">${state.resumeAttack?'Deploy your elimination bonus, then resume the attack.':'Select one of your systems to deploy fleets.'}</p><div class="reserve-card"><strong>${state.reserve}</strong><span>FLEETS TO DEPLOY<br><span class="muted">${inc.base} base + ${inc.bonus} constellation income</span></span></div>${mine?`<p class="orders-copy">Deploy to <strong>${SYSTEMS[selected].name}</strong></p><div class="action-row">${fleetInput(1,Math.max(1,state.reserve))}<button class="primary" data-action="deploy" ${state.reserve===0?'disabled':''}>Deploy fleets</button></div>`:'<div class="cards-empty">Select a system under your command.</div>'}<button class="next-phase" data-action="attack-phase" ${state.reserve||state.players[0].cards.length>=5?'disabled':''}>${state.resumeAttack?'Resume attack':'Begin attack phase'} →</button>`;
+    if(mine&&!canLaunch(state,selected))html=`<h3 class="orders-title">Awaiting downtime.</h3><p class="orders-copy">This captured hub is locked until the next round. ${state.reserve?`Choose another system to deploy your ${state.reserve} reserves.`:'Your reserves are deployed; you can continue your turn.'}</p><button class="next-phase" data-action="attack-phase" ${state.reserve||state.players[0].cards.length>=5?'disabled':''}>Begin attack phase →</button>`;
   }else if(state.phase==='occupy'){
     const o=state.occupation;
     html=`<h3 class="orders-title">System captured.</h3><p class="orders-copy">Move ${o.min}–${o.max} fleets from ${SYSTEMS[o.from].name} into <strong>${SYSTEMS[o.to].name}</strong>. One fleet must stay behind.</p>${battleHTML()}<div class="action-row">${fleetInput(o.min,o.max)}<button class="primary" data-action="occupy">Occupy system</button></div>`;
   }else if(state.phase==='attack'){
-    const valid=mine&&state.territories[selected].troops>1&&target!==null&&enemies(state,0,state.territories[target].owner)&&NEIGHBORS[selected].includes(target);
+    const valid=mine&&state.territories[selected].troops>1&&target!==null&&enemies(state,0,state.territories[target].owner)&&NEIGHBORS[selected].includes(target)&&canLaunch(state,selected)&&canLaunch(state,target);
     html='<h3 class="orders-title">Push the frontline.</h3>';
+    if(fwEnabled(state))html+=`<p class="operations-left">${state.operations} PLEX OPERATIONS AVAILABLE</p>`;
     if(valid){
       const a=state.territories[selected],d=state.territories[target],chance=conquestChance(a.troops-1,d.troops);
+      if(needsHub(state,target)&&d.contested<100){
+        html+=`<p class="orders-copy">${SYSTEMS[selected].name} → <strong>${SYSTEMS[target].name}</strong></p><div class="contest-meter"><span style="width:${d.contested}%"></span></div><p class="orders-copy"><strong>${d.contested}% contested.</strong> Complete offensive plexes to make the infrastructure hub vulnerable at 100%.</p><button class="primary wide" style="margin-top:13px" data-action="plex" ${state.operations?'':'disabled'}>Run offensive plex · +25%</button>`;
+      }else{
       html+=`<p class="orders-copy"><strong>${SYSTEMS[selected].name}</strong> → <strong>${SYSTEMS[target].name}</strong></p><div class="odds"><span>${a.troops-1} attacking / ${d.troops} defending</span><strong>${a.troops>501||d.troops>500?'≈':''}${(chance*100).toFixed(0)}%</strong></div><p class="orders-copy">Chance to capture with maximum dice.</p><div class="action-row"><select id="attack-dice" aria-label="Attack dice">${Array.from({length:Math.min(3,a.troops-1)},(_,i)=>`<option value="${i+1}" ${i===Math.min(3,a.troops-1)-1?'selected':''}>${i+1} ${i?'dice':'die'}</option>`).join('')}</select><button class="primary" data-action="roll" ${blitzing?'disabled':''}>Roll attack</button></div><button class="next-phase" data-action="blitz">${blitzing?'Stop blitz':'Blitz until capture →'}</button>`;
+      if(fwEnabled(state))html+=`<p class="trade-info">${needsHub(state,target)?'HUB VULNERABLE · A victory marks this system lost until round-end downtime.':'Clear this neutral garrison. Your militia already holds its sovereignty.'}</p>`;
+      }
     }else html+=`<p class="orders-copy">${mine?state.territories[selected].troops<2?'This system needs at least two fleets to attack.':'Select a connected enemy system. Eligible targets glow on the map.':'Select one of your systems, then a connected enemy.'}</p>`;
+    const defend=target??selected;
+    if(fwEnabled(state)&&mine&&state.territories[selected].troops>=2&&defend!==null&&state.territories[defend].sovereignty===state.players[0].faction&&state.territories[defend].contested>0&&canLaunch(state,selected)&&canLaunch(state,defend))html+=`<button class="next-phase" data-action="plex" ${state.operations?'':'disabled'}>Defensive plex · ${SYSTEMS[defend].name} (${state.territories[defend].contested}%)</button>`;
     html+=battleHTML()+`<button class="next-phase" data-action="fortify-phase">Finish attacks & fortify →</button>`;
   }else if(state.phase==='fortify'){
     html=`<h3 class="orders-title">Secure your gains.</h3><p class="orders-copy">${state.moved?'Fleet transfer complete. End your turn when ready.':'Optionally transfer fleets once through systems you own. Select an origin, then a friendly destination.'}</p>`;
@@ -102,8 +114,8 @@ function battleHTML(){
 function renderIntel(){
   const index=target??selected;
   if(index===null){$('intel').innerHTML='<div class="intel-placeholder"><span>◎</span><p>Select a system on the map<br>to inspect its fleet and stargates.</p></div>';return;}
-  const s=SYSTEMS[index],t=state.territories[index],g=GROUPS[s.group],p=state.players[t.owner];
-  $('intel').innerHTML=`<div class="selected-name">${s.name}<span class="security">${s.security.toFixed(1)}</span></div><p class="system-location">${g.region} / ${g.name}</p><div class="intel-stats"><div><small>COMMANDER</small><strong style="color:${COLORS[t.owner]}">${escape(p.name)}</strong></div><div><small>STANDING FLEET</small><strong>${t.troops} ${t.troops===1?'fleet':'fleets'}</strong></div><div><small>CONSTELLATION</small><strong>+${g.bonus} bonus fleets</strong></div><div><small>STARGATES</small><strong>${NEIGHBORS[index].length} connections</strong></div></div><div class="gate-list">${NEIGHBORS[index].map(i=>`<button data-system="${i}" class="${enemies(state,0,state.territories[i].owner)?'enemy':''}">${SYSTEMS[i].name} · ${state.territories[i].troops}</button>`).join('')}</div><button class="text-button" style="margin-top:13px" data-focus="${index}">Locate on map ↗</button>`;
+  const s=SYSTEMS[index],t=state.territories[index],g=GROUPS[s.group];
+  $('intel').innerHTML=`<div class="selected-name">${s.name}<span class="security">${s.security.toFixed(1)}</span></div><p class="system-location">${g.region} / ${g.name}</p><div class="intel-stats"><div><small>COMMANDER</small><strong style="color:${COLORS[t.owner]||'#a0acb9'}">${escape(controllerName(state,t.owner))}</strong></div><div><small>STANDING FLEET</small><strong>${t.troops} ${t.troops===1?'fleet':'fleets'}</strong></div><div><small>CONSTELLATION</small><strong>+${g.bonus} bonus fleets</strong></div><div><small>STARGATES</small><strong>${NEIGHBORS[index].length} connections</strong></div></div>${fwEnabled(state)?`<div class="sovereignty-intel"><strong style="color:${FACTION_COLORS[t.sovereignty]}">${t.sovereignty==='caldari'?'Caldari State':'Gallente Federation'}</strong><span>${operationalState(state,index)}${t.home?' · Starting stronghold':''}</span><div class="contest-meter"><span style="width:${t.contested}%"></span></div><small>${t.pending?'LOST · Occupancy flips at next round downtime':t.contested===100?'VULNERABLE · Hub can be attacked':`${t.contested}% contested · Hub invulnerable`}</small>${t.owner===NEUTRAL?'<p>Neutral garrison; the militia claim remains in force.</p>':''}</div>`:''}<div class="gate-list">${NEIGHBORS[index].map(i=>`<button data-system="${i}" class="${enemies(state,0,state.territories[i].owner)?'enemy':''}">${SYSTEMS[i].name} · ${state.territories[i].troops}</button>`).join('')}</div><button class="text-button" style="margin-top:13px" data-focus="${index}">Locate on map ↗</button>`;
 }
 function renderCards(){
   const hand=state.players[0].cards;
@@ -111,7 +123,7 @@ function renderCards(){
   $('card-count').textContent=`${hand.length} HELD`;
   if(!hand.length){$('cards').innerHTML='<div class="cards-empty">Conquer a system to earn a card.<br>Trade sets of three for more fleets.</div>';return;}
   const allowed=humanTurn()&&state.phase==='reinforce'&&(!state.resumeAttack||hand.length>=5);
-  const eligible=chosenCards.filter(c=>c<SYSTEMS.length&&state.territories[c].owner===0);
+  const eligible=chosenCards.filter(c=>c<SYSTEMS.length&&state.territories[c].owner===0&&canLaunch(state,c));
   $('cards').innerHTML=`<div class="hand">${hand.map(c=>`<button class="card ${chosenCards.includes(c)?'selected':''}" data-card="${c}" aria-pressed="${chosenCards.includes(c)}"><img src="assets/${cardType(c)==='Frigate'?'catalyst':cardType(c)==='Cruiser'?'caracal':'dominix'}.png" alt=""><span>${c<SYSTEMS.length?SYSTEMS[c].name:'Wild card'}</span><small>${cardType(c).toUpperCase()}</small></button>`).join('')}</div><p class="trade-info">Next set: <strong>+${tradeValue(state.trades)} fleets</strong>. ${hand.length>=5?'A set must be exchanged before attacking.':'Choose three cards or find a valid set.'}</p>${eligible.length>1?`<label class="field-label" for="card-bonus">OWNED SYSTEM +2 BONUS</label><select id="card-bonus" style="width:100%;font-size:10px">${eligible.map(i=>`<option value="${i}">${SYSTEMS[i].name}</option>`).join('')}</select>`:''}<div class="action-row"><button class="secondary" data-action="find-set" ${findSet(hand)?'':'disabled'}>Find set</button><button class="secondary" data-action="trade" ${allowed&&validSet(chosenCards)?'':'disabled'}>Exchange</button></div>`;
 }
 function eventHTML(l){return `<div class="activity-entry ${['capture','battle'].includes(l.kind)?l.kind:''}"><time>${String(l.turn).padStart(2,'0')}</time><p>${escape(l.text)}</p></div>`;}
@@ -127,6 +139,7 @@ function scheduleBot(){
     try{
       const previous=state.current, action=stepBot(state);
       if(action?.type==='attack'){selected=action.from;target=action.to;sound('dice-roll');}
+      if(action?.type==='plex'){selected=action.from;target=action.to;sound('interface');}
       if(action?.type==='occupy')sound('notification');
       if(state.current!==previous){selected=null;target=null;if(state.current===0)sound('complete');}
       save();render();
@@ -154,6 +167,7 @@ document.querySelector('.right-panel').addEventListener('click',e=>{
     case 'deploy':transact(()=>reinforce(state,selected,amount));break;
     case 'attack-phase':transact(()=>{beginAttack(state);target=null;});break;
     case 'roll':transact(()=>attack(state,selected,target,Number($('attack-dice').value)),'dice-roll');break;
+    case 'plex':transact(()=>plex(state,selected,target??selected),'interface');break;
     case 'blitz':if(blitzing){stopBlitz();render();}else{blitzing=true;executeBlitz();}break;
     case 'occupy':transact(()=>{const to=state.occupation.to;occupy(state,amount);selected=to;target=null;},'notification');break;
     case 'fortify-phase':transact(()=>{beginFortify(state);target=null;});break;
@@ -199,7 +213,7 @@ $('save-file').addEventListener('change',async e=>{
   const file=e.target.files[0];if(!file)return;
   try{
     if(file.size>4_000_000)throw new Error('Save file is too large.');
-    const incoming=JSON.parse(await file.text());assertState(incoming);
+    const incoming=migrateSave(JSON.parse(await file.text()));assertState(incoming);
     // Import is an explicit replacement action; keep a recovery copy of the prior
     // campaign so accidental imports remain reversible.
     if(started)try{localStorage.setItem(`${KEY}-before-import`,JSON.stringify(state));}catch{}

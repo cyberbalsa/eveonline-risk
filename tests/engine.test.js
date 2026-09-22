@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { SYSTEMS, GROUPS, EDGES, NEIGHBORS } from '../map-data.js';
-import { newGame, assertState, owned, enemies, income, reinforce, beginAttack, attack, occupy, beginFortify, fortify, endTurn, connectedOwned, compareDice, diceOutcomes, conquestChance, cardType, findSet, tradeCards, tradeValue } from '../engine.js';
+import { newGame as createGame, assertState, owned, enemies, income, reinforce, beginAttack, attack, occupy, beginFortify, fortify, endTurn, connectedOwned, compareDice, diceOutcomes, conquestChance, cardType, findSet, tradeCards, tradeValue } from '../engine.js';
 import { observation, chooseAction, stepBot } from '../bots.js';
+const newGame = options => createGame({ rules: 'classic', ...options });
 
 test('frozen ESI geography exactly matches the connected playable graph',()=>{
   const source=JSON.parse(readFileSync(new URL('../research/warzone.json',import.meta.url)));

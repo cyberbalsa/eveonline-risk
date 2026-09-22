@@ -1,66 +1,50 @@
 #!/usr/bin/env python3
-"""Generate a deterministic schematic, preserving every ESI warzone edge."""
-import json, math, pathlib, random
-ROOT = pathlib.Path(__file__).resolve().parents[1]
-d = json.loads((ROOT / 'research/warzone.json').read_text())
-raw = sorted(d['systems'], key=lambda s: s['name'])
+"""Build the warzone using CCP's exact in-game 2D layout and ESI gates."""
+import json
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+data = json.loads((ROOT / 'research/warzone.json').read_text())
+layout = json.loads((ROOT / 'research/map-layout.json').read_text())
+positions = {s['id']: s['position2D'] for s in layout['systems']}
+original = {s['solar_system_id']: s['owner_faction_id'] for s in data['roster']}
+raw = sorted(data['systems'], key=lambda s: s['name'])
 index = {s['system_id']: i for i, s in enumerate(raw)}
-cs = sorted(d['constellations'].values(), key=lambda c: c['name'])
-gi = {c['constellation_id']: i for i, c in enumerate(cs)}
-edges = [[index[a], index[b]] for a, b in d['edges']]
+constellations = sorted(data['constellations'].values(), key=lambda c: c['name'])
+group_index = {c['constellation_id']: i for i, c in enumerate(constellations)}
+edges = [[index[a], index[b]] for a, b in data['edges']]
 neighbors = [[] for _ in raw]
-for a, b in edges: neighbors[a].append(b); neighbors[b].append(a)
-# Force-directed constellation positions, followed by local node placement.
-# This is an original schematic: topology is real, screen coordinates are not.
-rng = random.Random(9212026)
-centers = [[rng.uniform(200, 1400), rng.uniform(180, 920)] for _ in cs]
-gedges = set(tuple(sorted((gi[raw[a]['constellation_id']], gi[raw[b]['constellation_id']]))) for a,b in edges if raw[a]['constellation_id'] != raw[b]['constellation_id'])
-for iteration in range(1600):
-    force = [[0.,0.] for _ in centers]
-    for i in range(len(cs)):
-        for j in range(i):
-            dx,dy = centers[i][0]-centers[j][0], centers[i][1]-centers[j][1]
-            dist = max(1, math.hypot(dx,dy)); f = 42000/(dist*dist)
-            for k,v in enumerate([dx/dist*f,dy/dist*f]):force[i][k]+=v;force[j][k]-=v
-    for a,b in gedges:
-        dx,dy=centers[b][0]-centers[a][0],centers[b][1]-centers[a][1]
-        dist=max(1,math.hypot(dx,dy));f=(dist-320)*.008
-        for k,v in enumerate([dx/dist*f,dy/dist*f]):force[a][k]+=v;force[b][k]-=v
-    for i,p in enumerate(centers):
-        for k,mid in enumerate([800,550]):p[k]+=max(-4,min(4,force[i][k]+(mid-p[k])*.0008))
-def scale(points,w,h,padx,pady):
-    bounds=[(min(p[k] for p in points),max(p[k] for p in points)) for k in [0,1]]
-    return [[padx+(p[0]-bounds[0][0])/(bounds[0][1]-bounds[0][0])*w,pady+(p[1]-bounds[1][0])/(bounds[1][1]-bounds[1][0])*h] for p in points]
-centers=scale(centers,1200,800,220,160)
-pos=[]
+for a, b in edges:
+    neighbors[a].append(b)
+    neighbors[b].append(a)
+
+# A common scale and the standard north-positive to screen-down Y conversion
+# preserve the actual EVE client's 2D map, including every relative distance.
+width, height, padding = 1710, 1290, 90
+min_x, max_x = min(p['x'] for p in positions.values()), max(p['x'] for p in positions.values())
+min_y, max_y = min(p['y'] for p in positions.values()), max(p['y'] for p in positions.values())
+scale = min((width - 2 * padding) / (max_x - min_x), (height - 2 * padding) / (max_y - min_y))
+offset_x = (width - (max_x - min_x) * scale) / 2
+offset_y = (height - (max_y - min_y) * scale) / 2
+groups = []
+for c in constellations:
+    members = [i for i, s in enumerate(raw) if s['constellation_id'] == c['constellation_id']]
+    frontier = sum(any(j not in members for j in neighbors[i]) for i in members)
+    groups.append({'name': c['name'], 'region': data['regions'][str(c['region_id'])]['name'],
+                   'systems': members, 'bonus': max(1, round((len(members) + frontier) / 3))})
+systems = []
 for s in raw:
-    c=centers[gi[s['constellation_id']]]
-    pos.append([c[0]+rng.uniform(-100,100),c[1]+rng.uniform(-90,90)])
-for iteration in range(1400):
-    force=[[0.,0.] for _ in pos]
-    for i in range(len(pos)):
-        for j in range(i):
-            dx,dy=pos[i][0]-pos[j][0],pos[i][1]-pos[j][1]
-            dist=max(1,math.hypot(dx,dy));f=6500/(dist*dist)
-            # Labels need more horizontal room than vertical room.
-            if abs(dx)<112 and abs(dy)<60:
-                f+=min(8,(112-abs(dx))*.07+(60-abs(dy))*.09)
-            for k,v in enumerate([dx/dist*f,dy/dist*f]):force[i][k]+=v;force[j][k]-=v
-    for a,b in edges:
-        dx,dy=pos[b][0]-pos[a][0],pos[b][1]-pos[a][1]
-        dist=max(1,math.hypot(dx,dy));f=(dist-115)*.012
-        for k,v in enumerate([dx/dist*f,dy/dist*f]):force[a][k]+=v;force[b][k]-=v
-    for i,p in enumerate(pos):
-        center=centers[gi[raw[i]['constellation_id']]]
-        for k in [0,1]:p[k]+=max(-3,min(3,force[i][k]+(center[k]-p[k])*.012))
-pos=scale(pos,1530,1090,90,100)
-groups=[]
-for c in cs:
-    members=[i for i,s in enumerate(raw) if s['constellation_id']==c['constellation_id']]
-    frontier=sum(any(j not in members for j in neighbors[i]) for i in members)
-    groups.append({'name':c['name'],'region':d['regions'][str(c['region_id'])]['name'],'systems':members,'bonus':max(1,round((len(members)+frontier)/3))})
-systems=[{'id':s['system_id'],'name':s['name'],'group':gi[s['constellation_id']],'security':round(s['security_status'],1),'x':round(pos[i][0],1),'y':round(pos[i][1],1)} for i,s in enumerate(raw)]
-content='// Generated by scripts/build-map.py from the frozen public ESI snapshot.\n'
-for name,data in [('SYSTEMS',systems),('GROUPS',groups),('EDGES',edges),('NEIGHBORS',neighbors)]:content+=f'export const {name} = '+json.dumps(data,separators=(',',':'))+';\n'
-(ROOT/'map-data.js').write_text(content)
-print(f'Built {len(systems)} systems, {len(edges)} gates, {len(groups)} constellation bonuses.')
+    p = positions[s['system_id']]
+    systems.append({'id': s['system_id'], 'name': s['name'],
+                    'group': group_index[s['constellation_id']], 'security': round(s['security_status'], 1),
+                    'faction': 'caldari' if original[s['system_id']] == 500001 else 'gallente',
+                    'x': round(offset_x + (p['x'] - min_x) * scale, 6),
+                    'y': round(offset_y + (max_y - p['y']) * scale, 6)})
+metadata = {'layout': 'CCP in-game 2D', 'build': layout['build'], 'width': width, 'height': height,
+            'scale': scale, 'offsetX': offset_x, 'offsetY': offset_y,
+            'minX': min_x, 'maxY': max_y, 'source': layout['source']}
+content = '// Generated by scripts/build-map.py from frozen CCP SDE positions and public ESI gates.\n'
+for name, value in [('SYSTEMS', systems), ('GROUPS', groups), ('EDGES', edges), ('NEIGHBORS', neighbors), ('MAP_LAYOUT', metadata)]:
+    content += f'export const {name} = ' + json.dumps(value, separators=(',', ':')) + ';\n'
+(ROOT / 'map-data.js').write_text(content)
+print(f"Built {len(systems)} systems and {len(edges)} gates using CCP's in-game 2D positions.")

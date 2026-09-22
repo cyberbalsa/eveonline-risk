@@ -1,11 +1,13 @@
 import { GROUPS, NEIGHBORS, SYSTEMS } from './map-data.js';
-import { owned, borders, income, enemies, conquestChance, findSet, reinforce, tradeCards, beginAttack, attack, occupy, beginFortify, connectedOwned, fortify, endTurn } from './engine.js';
+import { owned, borders, income, enemies, conquestChance, findSet, reinforce, tradeCards, beginAttack, attack, occupy, beginFortify, connectedOwned, fortify, endTurn, plex } from './engine.js';
+import { NEUTRAL, fwEnabled, canLaunch, needsHub } from './warfare.js';
 
 function targetValue(s, target) {
   const g = GROUPS[SYSTEMS[target].group], current = s.current;
   const held = g.systems.filter(i => s.territories[i].owner === current).length;
-  const remaining = owned(s, s.territories[target].owner).length;
-  const breaksBonus = g.systems.every(i => s.territories[i].owner === s.territories[target].owner);
+  const owner = s.territories[target].owner;
+  const remaining = owner === NEUTRAL ? 90 : owned(s, owner).length;
+  const breaksBonus = owner !== NEUTRAL && g.systems.every(i => s.territories[i].owner === owner);
   return 1 + (held / g.systems.length) * 3 + (held === g.systems.length - 1 ? g.bonus * 2 : 0) + (breaksBonus ? g.bonus : 0) + (remaining === 1 ? 5 + s.players[s.territories[target].owner].cards.length : 0);
 }
 function borderScore(s, i) {
@@ -26,9 +28,12 @@ export function bestAttack(s, style = s.players[s.current].style) {
   const threshold = { aggressive: .62, balanced: .73, defensive: .82 }[style] + modifier;
   let best = null;
   for (const from of owned(s)) {
+    if (!canLaunch(s, from)) continue;
     const fleet = s.territories[from].troops;
     if (fleet < 2) continue;
     for (const to of borders(s, from)) {
+      if (!canLaunch(s, to)) continue;
+      if (needsHub(s, to) && s.territories[to].contested < 100 && !s.operations) continue;
       const chance = conquestChance(fleet - 1, s.territories[to].troops);
       if (chance < threshold) continue;
       const exposure = borders(s, from).filter(i => i !== to).length;
@@ -42,13 +47,13 @@ export function bestAttack(s, style = s.players[s.current].style) {
 // This projection intentionally omits RNG state, shuffled deck order, and enemy
 // card identities. Planning can inspect only the board and its own hand.
 export function observation(state) {
-  const { mode, difficulty, current, phase, reserve, conquered, moved, resumeAttack, occupation } = state;
-  return { mode, difficulty, current, phase, reserve, conquered, moved, resumeAttack, occupation,
+  const { mode, rules, operations, difficulty, current, phase, reserve, conquered, moved, resumeAttack, occupation } = state;
+  return { mode, rules, operations, difficulty, current, phase, reserve, conquered, moved, resumeAttack, occupation,
     territories: state.territories.map(t => ({ ...t })),
     players: state.players.map((p, i) => ({ ...p, cards: i === current ? [...p.cards] : Array(p.cards.length).fill(null) })) };
 }
 export function chooseAction(s) {
-  const mine = owned(s), style = s.players[s.current].style;
+  const mine = owned(s).filter(i => canLaunch(s, i)), style = s.players[s.current].style;
   if (s.phase === 'reinforce') {
     const hand = s.players[s.current].cards, set = findSet(hand);
     if (set && (hand.length >= 5 || !s.resumeAttack && (style === 'aggressive' || hand.length >= 4))) return { type: 'trade', cards: set };
@@ -65,13 +70,29 @@ export function chooseAction(s) {
   }
   if (s.phase === 'occupy') {
     const o = s.occupation;
+    if (fwEnabled(s)) {
+      const threat = borders(s, o.from).reduce((n, i) => Math.max(n, s.territories[i].troops - 1), 0);
+      const reserve = Math.min(o.max - o.min, Math.ceil(o.max * .65), threat);
+      // A defeated hub cannot be used as a launch point until downtime. Keep
+      // the original gate covered instead of leaving an exposed single fleet.
+      return { type: 'occupy', amount: Math.max(o.min, o.max - reserve) };
+    }
     const nextFront = borders(s, o.to).length;
     const leave = nextFront ? 0 : Math.min(o.max - o.min, Math.max(0, s.territories[o.from].troops - o.min - 1));
     return { type: 'occupy', amount: Math.max(o.min, o.max - leave) };
   }
   if (s.phase === 'attack') {
     const next = bestAttack(s);
-    return next ? { type: 'attack', from: next.from, to: next.to, dice: Math.min(3, s.territories[next.from].troops - 1) } : { type: 'fortifyPhase' };
+    if (next) return needsHub(s, next.to) && s.territories[next.to].contested < 100
+      ? { type: 'plex', from: next.from, to: next.to }
+      : { type: 'attack', from: next.from, to: next.to, dice: Math.min(3, s.territories[next.from].troops - 1) };
+    if (fwEnabled(s) && s.operations) {
+      for (const from of mine.filter(i => s.territories[i].troops >= 2)) {
+        const to = [from, ...NEIGHBORS[from]].find(i => canLaunch(s, i) && s.territories[i].sovereignty === s.players[s.current].faction && s.territories[i].contested > 0);
+        if (to !== undefined) return { type: 'plex', from, to };
+      }
+    }
+    return { type: 'fortifyPhase' };
   }
   if (s.phase === 'fortify') {
     if (!s.moved) {
@@ -100,6 +121,7 @@ export function applyAction(state, action) {
     case 'reinforce': return reinforce(state, action.target, action.amount);
     case 'attackPhase': return beginAttack(state);
     case 'attack': return attack(state, action.from, action.to, action.dice);
+    case 'plex': return plex(state, action.from, action.to);
     case 'occupy': return occupy(state, action.amount);
     case 'fortifyPhase': return beginFortify(state);
     case 'fortify': return fortify(state, action.from, action.to, action.amount);

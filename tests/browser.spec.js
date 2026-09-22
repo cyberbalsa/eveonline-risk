@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { newGame, owned, beginAttack, beginFortify, endTurn, attack } from '../engine.js';
+import { newGame as createGame, owned, beginAttack, beginFortify, endTurn, attack } from '../engine.js';
 import { EDGES, SYSTEMS } from '../map-data.js';
 const KEY='eve-warfront-campaign-v1';
+const newGame = options => createGame({ rules: 'classic', ...options });
 async function install(page,state){await page.addInitScript(({key,state})=>localStorage.setItem(key,JSON.stringify(state)),{key:KEY,state});await page.goto('/');}
 async function current(page){return page.evaluate(key=>JSON.parse(localStorage.getItem(key)),KEY);}
 
@@ -84,4 +85,36 @@ test('the static app works under a GitHub Pages project subpath',async({page})=>
   await page.goto('/eveonline-risk/');await page.getByRole('button',{name:'Deploy to the warzone'}).click();
   await expect(page.locator('#map-systems .system')).toHaveCount(90);
   expect(await page.locator('.commander img').first().evaluate(img=>img.complete&&img.naturalWidth>0)).toBe(true);
+});
+
+test('militia map shows neutral claims and exact CCP star positions without moving the board on selection',async({page})=>{
+  const s=createGame({seed:77});await install(page,s);
+  const neutral=s.territories.findIndex(t=>t.owner===-1);
+  await page.locator('#system-search').fill(SYSTEMS[neutral].name);
+  await expect(page.locator('#intel')).toContainText('Neutral garrison');
+  await expect(page.locator('#intel')).toContainText('militia claim remains');
+  const node=page.locator(`#map-systems [data-system="${neutral}"]`);
+  expect(await node.getAttribute('transform')).toBe(`translate(${SYSTEMS[neutral].x} ${SYSTEMS[neutral].y})`);
+  await page.locator('#map-color').selectOption('commander');
+  expect(await node.getAttribute('transform')).toBe(`translate(${SYSTEMS[neutral].x} ${SYSTEMS[neutral].y})`);
+  await page.locator('#map-color').selectOption('militia');
+  await expect(page.locator('.frontline-gate').first()).toBeVisible();
+});
+test('offensive plexes unlock the hub, and its pending flip survives a save reload',async({page})=>{
+  const s=createGame({seed:18}),[from,to]=EDGES[0];s.phase='attack';s.reserve=0;s.operations=4;
+  s.territories[from]={owner:0,troops:80,sovereignty:'caldari',contested:0,pending:null,home:false};
+  s.territories[to]={owner:-1,troops:1,sovereignty:'gallente',contested:0,pending:null,home:false};
+  await install(page,s);await page.locator('#system-search').fill(SYSTEMS[from].name);await page.locator('#system-search').fill('');
+  await page.locator(`#intel [data-system="${to}"]`).click();
+  await expect(page.getByRole('button',{name:'Roll attack',exact:true})).toHaveCount(0);
+  for(let i=0;i<4;i++)await page.getByRole('button',{name:'Run offensive plex'}).click();
+  await expect(page.locator('#intel')).toContainText('VULNERABLE');
+  await page.getByRole('button',{name:'Blitz until capture'}).click();
+  await page.getByRole('button',{name:'Occupy system'}).click();
+  await expect(page.locator('#intel')).toContainText('LOST');
+  const pending=await current(page);expect(pending.territories[to].sovereignty).toBe('gallente');expect(pending.territories[to].pending.faction).toBe('caldari');
+  // Use an explicit import so the fixture-initialization hook cannot overwrite
+  // the latest state during the reload under test.
+  await page.addInitScript(({key,state})=>localStorage.setItem(key,JSON.stringify(state)),{key:KEY,state:pending});
+  await page.reload();await page.locator('#system-search').fill(SYSTEMS[to].name);await expect(page.locator('#intel')).toContainText('LOST');
 });
